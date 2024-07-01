@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Morning Routine</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+        .time-input {
+            display: flex;
+            flex-direction: column;
+        }
+        .time-input input {
+            padding: 5px;
+            font-size: 16px;
+        }
+        .chart {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .routine-item {
+            width: 200px;
+            height: 50px;
+            border: 2px solid #007bff;
+            border-radius: 25px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            background-color: #f8f9fa;
+        }
+        .routine-item.active {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .choice {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+        }
+        .choice-item {
+            width: 50px;
+            height: 50px;
+            border: 2px solid #007bff;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .choice-item.active {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .arrow {
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 20px solid #007bff;
+            margin: 10px 0;
+        }
+        #exportButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #exportButton:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>Build A Successful Morning Routine</h1>
+    <div class="header">
+        <div class="time-input">
+            <label for="bedtime">Bedtime</label>
+            <input type="time" id="bedtime" value="23:30">
+        </div>
+        <div class="time-input">
+            <label for="wakeup">Wake Up</label>
+            <input type="time" id="wakeup" value="07:30">
+        </div>
+    </div>
+    <div class="chart" id="routineChart"></div>
+    <button id="exportButton">Export Summary</button>
+
+    <script>
+        const routineFlow = {
+            start: {
+                text: "Did you sleep well?",
+                choices: ["Yes", "No"],
+                next: {
+                    "Yes": "workout",
+                    "No": "meditation"
+                }
+            },
+            workout: {
+                text: "20 min workout",
+                next: "stretch"
+            },
+            stretch: {
+                text: "Stretch",
+                next: "breakfast"
+            },
+            meditation: {
+                text: "10 min meditation",
+                next: "breakfast"
+            },
+            breakfast: {
+                text: "Eat breakfast",
+                next: "shower_question"
+            },
+            shower_question: {
+                text: "Do you shower in the AM?",
+                choices: ["Yes", "No"],
+                next: {
+                    "Yes": "shower",
+                    "No": "get_dressed"
+                }
+            },
+            shower: {
+                text: "Take a shower",
+                next: "get_dressed"
+            },
+            get_dressed: {
+                text: "Get dressed",
+                next: "brush_teeth"
+            },
+            brush_teeth: {
+                text: "Brush teeth",
+                next: "clutter_question"
+            },
+            clutter_question: {
+                text: "Is your space cluttered?",
+                choices: ["Yes", "No"],
+                next: {
+                    "Yes": "declutter",
+                    "No": "todo_list"
+                }
+            },
+            declutter: {
+                text: "15 min declutter",
+                next: "todo_list"
+            },
+            todo_list: {
+                text: "Make to-do list",
+                next: "end"
+            },
+            end: {
+                text: "Nice! Your day is off to a strong start. Keep going..."
+            }
+        };
+
+        const chart = document.getElementById('routineChart');
+        const completedTasks = new Set();
+
+        function createRoutineItem(item, key) {
+            const routineItem = document.createElement('div');
+            routineItem.className = 'routine-item';
+            routineItem.textContent = item.text;
+            routineItem.dataset.key = key;
+            chart.appendChild(routineItem);
+
+            if (item.choices) {
+                const choiceContainer = document.createElement('div');
+                choiceContainer.className = 'choice';
+                item.choices.forEach(choice => {
+                    const choiceItem = document.createElement('div');
+                    choiceItem.className = 'choice-item';
+                    choiceItem.textContent = choice;
+                    choiceItem.onclick = function() {
+                        this.classList.add('active');
+                        completedTasks.add(key);
+                        setTimeout(() => {
+                            createRoutineItem(routineFlow[item.next[choice]], item.next[choice]);
+                        }, 300);
+                    };
+                    choiceContainer.appendChild(choiceItem);
+                });
+                chart.appendChild(choiceContainer);
+            } else if (item.next) {
+                const arrow = document.createElement('div');
+                arrow.className = 'arrow';
+                chart.appendChild(arrow);
+                routineItem.onclick = function() {
+                    this.classList.add('active');
+                    completedTasks.add(key);
+                    setTimeout(() => {
+                        createRoutineItem(routineFlow[item.next], item.next);
+                    }, 300);
+                };
+            } else {
+                completedTasks.add(key);
+            }
+        }
+
+        createRoutineItem(routineFlow.start, 'start');
+
+        document.getElementById('exportButton').addEventListener('click', function() {
+            const bedtime = document.getElementById('bedtime').value;
+            const wakeup = document.getElementById('wakeup').value;
+            let summary = `Morning Routine Summary\n\n`;
+            summary += `Bedtime: ${bedtime}\n`;
+            summary += `Wake up: ${wakeup}\n\n`;
+
+            for (let key in routineFlow) {
+                if (completedTasks.has(key)) {
+                    summary += `✅ ${routineFlow[key].text}\n`;
+                } else {
+                    summary += `❌ ${routineFlow[key].text}\n`;
+                }
+            }
+
+            const blob = new Blob([summary], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'morning_routine_summary.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>
